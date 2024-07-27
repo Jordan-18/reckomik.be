@@ -2,17 +2,25 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
-from similarity_description_english import get_similarity , prepare_similarity_system 
-
+import numpy as np
+import json
+from call_function import all_similarity
 
 # Get data
 df_komikcast=pd.read_csv("./data/komikcast.csv")
 df_westmanga=pd.read_csv("./data/westmanga.csv")
-df_mangadex=pd.read_csv("./data/mangadex.csv")
 
-consine_sim_indo_komikcast = prepare_similarity_system(df_komikcast)
-consine_sim_indo_westmanga = prepare_similarity_system(df_westmanga)
-consine_sim_eng_mangadex = prepare_similarity_system(df_mangadex)
+# Load the JSON file
+with open("./data/consine_decription_similarity.json", "r") as infile:
+    consine_decription_similarity = json.load(infile)
+    
+# Inverse: Convert lists back to NumPy arrays
+consine_decription_similarity = {
+    key: np.array(value) for key, value in consine_decription_similarity.items()
+}
+
+consine_sim_indo_komikcast = consine_decription_similarity['komikcast']
+consine_sim_indo_westmanga = consine_decription_similarity['westmanga']
 
 app = Flask(__name__)
 CORS(app)  # This enables CORS for your Flask app.
@@ -28,8 +36,9 @@ def recommendation():
         return jsonify({"error": "Title parameter is required"}), 400
     
     try:
-        # similarity = get_similarity(title, df_mangadex, consine_sim_eng_mangadex)
-        similarity = get_similarity(title, df_komikcast, consine_sim_indo_komikcast)
+        similarity = all_similarity(title, df_komikcast, consine_sim_indo_komikcast)
+        similarity = similarity.to_json(orient='records', lines=True)
+        return similarity
         return jsonify(similarity)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
