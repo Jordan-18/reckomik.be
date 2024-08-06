@@ -1,0 +1,14 @@
+pandas
+numpy
+math
+requests
+asyncio
+bs4
+re
+aiohttp 
+fuzzywuzzy 
+imagehash
+flask 
+flask_cors
+json
+python-Levenshtein
