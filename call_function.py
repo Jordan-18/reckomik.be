@@ -9,6 +9,10 @@ from bs4 import BeautifulSoup
 import re
 from aiohttp import ClientSession, ClientTimeout
 from asyncio import Semaphore
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Description Similarity System
 from fuzzywuzzy import process

@@ -5,7 +5,11 @@ import pandas as pd
 import numpy as np
 import asyncio
 import json
+import os
+from dotenv import load_dotenv
 from call_function import all_similarity, search_title, get_comics_komikcast, get_comics_westmanga, get_comics_mangadex, recommendation
+
+load_dotenv()
 
 # Get data
 df_komikcast=pd.read_csv("./data/komikcast.csv")
@@ -46,7 +50,7 @@ def search():
 def komikcast_update():
     page = request.args.get('page')
     try:
-        url = 'https://komikcast.cz/daftar-komik/page' + page
+        url = f'{os.getenv("komikcast_url")}/daftar-komik/page' + page
         data, pagination_count  = asyncio.run(get_comics_komikcast(url))
         return jsonify({'pagination':pagination_count,'data':data}), 200
     except Exception as e:
@@ -56,7 +60,7 @@ def komikcast_update():
 def westmanga_update():
     page = request.args.get('page')
     try:
-        url = 'https://westmanga.fun/manga?page=' + page
+        url = f'{os.getenv("westmanga_url")}/manga?page=' + page
         data, pagination_count = asyncio.run(get_comics_westmanga(url))
         return jsonify({'pagination':pagination_count,'data':data}), 200
     except Exception as e:
@@ -67,7 +71,7 @@ def mangadex_update():
     page = request.args.get('page')
     try:
         offset = (int(page) - 1) * 32
-        url = f'https://api.mangadex.org/manga?limit=32&offset={offset}'
+        url = f'{os.getenv("mangadex_url")}/manga?limit=32&offset={offset}'
         data, pagination_count = asyncio.run(get_comics_mangadex(url))
         return jsonify({'pagination':pagination_count,'data':data}), 200
     except Exception as e:
@@ -86,7 +90,14 @@ def reckomik():
         sort_criteria = sorted(criteria.items(), key=lambda x: x[1], reverse=True)
         for c, i in sort_criteria:
             sort.append(c)
+
+        main_url = os.getenv(os.getenv("main_comics"))
+        if 'image' in df_komikcast.columns:
+            df_komikcast['image'] = df_komikcast['image'].apply(str)
+            df_komikcast['image'] = df_komikcast['image'].str.replace(r'^/wp-content', f'{main_url}/wp-content', regex=True)
+            
         title = search_title(title, df_komikcast)
+        
         
         # CONTERT-BASED-FILTERING
         similarity = all_similarity(title, df_komikcast, consine_sim_indo_komikcast)
